@@ -3,6 +3,9 @@ name = "indic-voice"
 version = "0.1.0"
 description = "Zero-shot Indic voice cloning and S2ST pipeline using Sarvam, OpenVoice, and Whisper"
 authors = [{name = "Harsha"}]
+license = {text = "MIT"}
+readme = "README.md"
+keywords = ["voice-cloning", "tts", "asr", "indic", "hindi", "openvoice"]
 dependencies = [
     "typer>=0.12.3",
     "rich>=13.7.1",
@@ -10,11 +13,24 @@ dependencies = [
     "sarvamai==0.1.0",
     "faster-whisper>=1.0.1",
     "deep-translator>=1.11.4",
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+    "librosa>=0.10.0",
+    "soundfile>=0.12.0",
+    "wavmark>=0.0.3",
+    "huggingface_hub>=0.20.0",
+    "langid>=1.1.6",
 ]
 requires-python = ">=3.9,<3.13"
 
 [project.scripts]
 indic-voice = "indic_voice.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]
 
 [build-system]
 requires = ["hatchling"]
