@@ -1,0 +1,21 @@
+[project]
+name = "indic-voice"
+version = "0.1.0"
+description = "Zero-shot Indic voice cloning and S2ST pipeline using Sarvam, OpenVoice, and Whisper"
+authors = [{name = "Harsha"}]
+dependencies = [
+    "typer>=0.12.3",
+    "rich>=13.7.1",
+    "python-dotenv>=1.0.1",
+    "sarvamai==0.1.0",
+    "faster-whisper>=1.0.1",
+    "deep-translator>=1.11.4",
+]
+requires-python = ">=3.9,<3.13"
+
+[project.scripts]
+indic-voice = "indic_voice.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
