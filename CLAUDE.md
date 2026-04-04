@@ -33,8 +33,15 @@ indic-voice-cli/
 │   │   ├── asr.py               # Whisper transcription
 │   │   ├── translator.py        # Text translation
 │   │   └── tts_sarvam.py        # Sarvam AI TTS (requires SARVAM_AI_API in .env)
-│   └── models/
-│       └── tone_transfer.py     # OpenVoice tone morphing (currently mocked)
+│   ├── models/
+│   │   ├── checkpoint_manager.py  # Auto-downloads OpenVoice v2 checkpoints from HF
+│   │   └── tone_transfer.py       # OpenVoice v2 tone morphing (real, not mocked)
+│   └── openvoice/               # Bundled OpenVoice v2 library (~3700 lines)
+│       ├── api.py               # ToneColorConverter, BaseSpeakerTTS
+│       ├── se_extractor.py      # Speaker embedding extraction
+│       ├── models.py, modules.py, mel_processing.py, ...
+│       └── text/                # Text processing utilities
+├── tests/                       # 18 tests across 5 modules
 ├── pyproject.toml               # Dependencies, entry points, build config
 ├── uv.lock                      # Lockfile (managed by uv)
 └── .env                         # API keys (not committed)
@@ -79,11 +86,27 @@ SARVAM_AI_API=your_sarvam_api_key_here
 
 ---
 
+## Implementation Status (dev branch)
+
+Both end-to-end pipelines are **fully wired with real models** — nothing is mocked in production code:
+
+| Stage | Status | Notes |
+|---|---|---|
+| ASR (Whisper) | ✅ Real | `faster-whisper`, falls back to HF download |
+| Translation | ✅ Real | `deep-translator` → Google Translate |
+| TTS (Sarvam) | ✅ Real | Bulbul v3, speaker/lang parameterized |
+| Tone Transfer (OpenVoice v2) | ✅ Real | Full library bundled in `openvoice/`, checkpoints auto-downloaded |
+
+`indic-voice clone` and `indic-voice translate` both work end-to-end on CPU or GPU.
+
 ## Known Caveats
 
-- `tone_transfer.py` — OpenVoice is **currently mocked** (`shutil.copy2`). OpenVoice has strict PyTorch/NumPy version constraints that conflict with the current environment. Real integration is a pending feature branch.
-- Whisper model path: tries `../faster_whisper_medium` locally before falling back to downloading `medium` from HuggingFace.
-- Sarvam TTS hardcodes `speaker="meera"` and `model="bulbul:v3"` — parameterization is a future enhancement.
+- **OpenVoice checkpoint download** — ~500 MB, auto-fetched from `myshell-ai/OpenVoice` on HF into `~/.cache/indic-voice/checkpoints_v2/` on first run.
+- **Whisper model path** — tries `../faster_whisper_medium` locally before downloading `medium` from HuggingFace (~1.5 GB). Path is cwd-relative and brittle.
+- **Sarvam TTS speaker** — hardcoded to `speaker="meera"` in `tts_sarvam.py`. Speaker parameterization is a future enhancement.
+- **OpenVoice TAU** — style transfer intensity hardcoded to `0.3` in `tone_transfer.py`.
+- **`processed/` directory** — `se_extractor.py` writes intermediate audio segments to `./processed/` during speaker embedding extraction; not cleaned up automatically.
+- **GPU recommended** — OpenVoice tone conversion works on CPU but is significantly slower for long audio.
 
 ---
 

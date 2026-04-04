@@ -4,11 +4,11 @@ from pathlib import Path
 from huggingface_hub import hf_hub_download
 from rich.console import Console
 
-_REPO_ID = "myshell-ai/OpenVoice"
+_REPO_ID = "myshell-ai/OpenVoiceV2"
 _REQUIRED_FILES = [
-    "checkpoints_v2/converter/config.json",
-    "checkpoints_v2/converter/checkpoint.pth",
-    "checkpoints_v2/base_speakers/ses/en-default.pth",
+    "converter/config.json",
+    "converter/checkpoint.pth",
+    "base_speakers/ses/en-default.pth",
 ]
 
 console = Console()
@@ -17,7 +17,7 @@ console = Console()
 def ensure_checkpoints(cache_dir: str | None = None) -> str:
     """Download OpenVoice v2 checkpoints if not cached.
 
-    Downloads required model checkpoint files from the myshell-ai/OpenVoice
+    Downloads required model checkpoint files from the myshell-ai/OpenVoiceV2
     HuggingFace repository on first run. Subsequent calls skip the download
     if all files are already present.
 
@@ -33,9 +33,7 @@ def ensure_checkpoints(cache_dir: str | None = None) -> str:
 
     ckpt_dir = os.path.join(cache_dir, "checkpoints_v2")
 
-    all_present = all(
-        os.path.exists(os.path.join(cache_dir, f)) for f in _REQUIRED_FILES
-    )
+    all_present = all(os.path.exists(os.path.join(ckpt_dir, f)) for f in _REQUIRED_FILES)
 
     if all_present:
         return ckpt_dir
@@ -43,7 +41,7 @@ def ensure_checkpoints(cache_dir: str | None = None) -> str:
     console.print("[dim]Downloading OpenVoice v2 checkpoints (first run)...[/dim]")
 
     for relative_path in _REQUIRED_FILES:
-        local_path = os.path.join(cache_dir, relative_path)
+        local_path = os.path.join(ckpt_dir, relative_path)
         if os.path.exists(local_path):
             continue
 
@@ -51,7 +49,7 @@ def ensure_checkpoints(cache_dir: str | None = None) -> str:
         hf_hub_download(
             repo_id=_REPO_ID,
             filename=relative_path,
-            local_dir=cache_dir,
+            local_dir=ckpt_dir,
         )
 
     console.print("[dim]Checkpoints ready.[/dim]")

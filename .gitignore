@@ -29,6 +29,8 @@ coverage.xml
 .DS_Store
 .idea/
 .vscode/
+translated_cloned.wav
+
 
 # OpenVoice temp output
 processed/

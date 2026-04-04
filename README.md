@@ -91,13 +91,31 @@ Pass the code via `--target-lang` (translate command).
 uv run pytest tests/ -v --cov=indic_voice
 ```
 
+## Implementation Status
+
+Both commands are **fully wired with real models** — nothing is mocked. The pipeline runs end-to-end on CPU or GPU.
+
+| Stage | Model | Status |
+|-------|-------|--------|
+| ASR | faster-whisper (medium) | ✅ Real |
+| Translation | Google Translate (deep-translator) | ✅ Real |
+| TTS | Sarvam AI Bulbul v3 | ✅ Real |
+| Tone Transfer | OpenVoice v2 | ✅ Real |
+
+First run downloads ~2 GB of model weights total (Whisper + OpenVoice v2 checkpoints).
+
 ## Known Limitations
 
 - **GPU recommended** — OpenVoice v2 tone conversion runs significantly faster
   on CUDA. CPU inference works but is slow for long audio.
-- Whisper model (~1.5 GB) is downloaded on first `translate` run if no local
-  model is found at `../faster_whisper_medium`.
+- Whisper model (~1.5 GB) downloaded on first `translate` run if no local model
+  is found at `../faster_whisper_medium`.
+- OpenVoice v2 checkpoints (~500 MB) auto-downloaded from HuggingFace
+  (`myshell-ai/OpenVoice`) into `~/.cache/indic-voice/checkpoints_v2/` on first run.
 - Checkpoint cache lives at `~/.cache/indic-voice/` — not cleaned automatically.
+- Speaker is hardcoded to Sarvam AI's `meera` voice for the TTS base layer.
+- A `processed/` directory is created in the working directory during tone transfer
+  for intermediate audio segments — safe to delete after a run.
 
 ## License
 
