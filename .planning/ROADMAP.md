@@ -12,7 +12,7 @@ The existing Sarvam+OpenVoice pipeline produces noticeably synthetic clones beca
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Benchmark Harness** - Build the evaluation harness that proves IndicF5 beats the current pipeline before any production code changes
+- [x] **Phase 1: Benchmark Harness** - Build the evaluation harness that proves IndicF5 beats the current pipeline before any production code changes
 - [ ] **Phase 2: IndicF5 Module** - Build and test the IndicF5 TTS module in complete isolation — no CLI changes yet
 - [ ] **Phase 3: CLI Integration** - Wire IndicF5 into the `clone` and `translate` commands with ref_text auto-fill and new UX guardrails
 - [ ] **Phase 4: Dependency Cleanup** - Remove Sarvam, OpenVoice, and the 10 packages that supported them
@@ -30,7 +30,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The report shows Speaker Similarity (WavLM cosine), WER (faster-whisper large-v3), and RTF for each pipeline side-by-side
   4. A structured JSONL + human-readable summary file is written to disk; a reader can tell at a glance which pipeline wins
   5. Benchmark completes in a single command invocation with no manual steps between pipelines
-**Plans**: TBD
+**Plans**: 3/3 complete ✅
+- [x] 01-01-PLAN.md — Benchmark Test Data
+- [x] 01-02-PLAN.md — Metrics Evaluation
+- [x] 01-03-PLAN.md — Benchmark Orchestrator
 
 ### Phase 2: IndicF5 Module
 **Goal**: `pipeline/tts_indicf5.py` is a fully tested, dependency-pinned module that generates cloned Indic speech — the CLI is not yet changed
@@ -42,7 +45,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Device auto-selects CUDA over CPU; MPS is explicitly excluded (no vocos ISTFT crash on Apple M4)
   4. `uv run pytest tests/test_tts_indicf5.py` passes — happy path, missing ref_audio, empty ref_text, and output path creation are all covered
   5. `transformers==4.49.0`, `numpy<=1.26.4`, `torchaudio>=2.0.0`, and `accelerate>=0.33.0` are pinned in `pyproject.toml`
-**Plans**: TBD
+**Plans**: 3 plans
+- [x] 02-01-PLAN.md — Dependency Pinning & Module Scaffold
+- [x] 02-02-PLAN.md — IndicF5 Core Implementation
+- [ ] 02-03-PLAN.md — Unit Test Suite
 
 ### Phase 3: CLI Integration
 **Goal**: Both `indic-voice clone` and `indic-voice translate` use IndicF5 end-to-end, with ref_text auto-filled and new UX guardrails in place — zero breaking changes
@@ -86,8 +92,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Benchmark Harness | 0/TBD | Not started | - |
-| 2. IndicF5 Module | 0/TBD | Not started | - |
+| 1. Benchmark Harness | 3/3 | ✅ COMPLETE | 2026-04-17 |
+| 2. IndicF5 Module | 0/3 | Not started | - |
 | 3. CLI Integration | 0/TBD | Not started | - |
 | 4. Dependency Cleanup | 0/TBD | Not started | - |
 | 5. Open-Source Polish | 0/TBD | Not started | - |

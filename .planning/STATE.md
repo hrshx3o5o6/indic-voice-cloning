@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 02-01 (IndicF5 Dependencies & Module Scaffold) — Plan complete
-last_updated: "2026-04-17T18:09:48.207Z"
+stopped_at: Completed 02-02 (IndicF5 Core Implementation) — Plan complete
+last_updated: "2026-04-17T18:13:43.206Z"
 last_activity: 2026-04-17
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -53,6 +53,7 @@ Progress: [██████████] 100% (Phase 1)
 
 *Updated 2026-04-17 after Phase 1 completion*
 | Phase 02-indicf5-module P01 | 120 | 3 tasks | 5 files |
+| Phase 02-indicf5-module P02 | 240 | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,7 @@ Recent decisions affecting current work:
 - Roadmap init: Benchmark gates all pipeline changes — Phase 1 must confirm IndicF5 wins before CLI is touched
 - Roadmap init: MPS explicitly excluded in IndicF5 module (vocos ISTFT crash on Apple M4)
 - Roadmap init: `transformers==4.49.0` must be pinned (>=4.51 breaks model loading with meta tensor error)
+- [Phase 02-indicf5-module]: Device selection excludes MPS (Apple M4 vocos ISTFT crash); uses device_map='auto' for automatic model placement
 
 ### Pending Todos
 
@@ -82,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-17T18:09:48.205Z
-Stopped at: Completed 02-01 (IndicF5 Dependencies & Module Scaffold) — Plan complete
+Last session: 2026-04-17T18:13:43.203Z
+Stopped at: Completed 02-02 (IndicF5 Core Implementation) — Plan complete
 Resume file: None

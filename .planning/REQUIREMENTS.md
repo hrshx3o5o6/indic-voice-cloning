@@ -16,13 +16,13 @@
 
 ### IndicF5 Module
 
-- [ ] **INDICF5-01**: `pipeline/tts_indicf5.py` exposes `generate_speech(text, ref_audio_path, ref_text, output_path) -> str` as a pure function
-- [ ] **INDICF5-02**: Module loads IndicF5 from `ai4bharat/IndicF5` with `trust_remote_code=True`; device auto-selects `cuda > cpu` (MPS explicitly excluded — vocos ISTFT crash on Apple M4)
+- [x] **INDICF5-01**: `pipeline/tts_indicf5.py` exposes `generate_speech(text, ref_audio_path, ref_text, output_path) -> str` as a pure function
+- [x] **INDICF5-02**: Module loads IndicF5 from `ai4bharat/IndicF5` with `trust_remote_code=True`; device auto-selects `cuda > cpu` (MPS explicitly excluded — vocos ISTFT crash on Apple M4)
 - [ ] **INDICF5-03**: `transformers==4.49.0` pinned in `pyproject.toml` (versions ≥4.51 break model loading with meta tensor error)
 - [ ] **INDICF5-04**: `torchaudio>=2.0.0` and `accelerate>=0.33.0` added to `pyproject.toml`
 - [ ] **INDICF5-05**: `numpy` upper-bounded to `<=1.26.4` in `pyproject.toml`
 - [ ] **INDICF5-06**: Unit tests in `tests/test_tts_indicf5.py` mock the heavy model and cover: happy path, missing ref_audio, empty ref_text, output path creation
-- [ ] **INDICF5-07**: If output is `int16`, normalize to `float32` before writing with `soundfile`
+- [x] **INDICF5-07**: If output is `int16`, normalize to `float32` before writing with `soundfile`
 
 ### CLI Integration
 
@@ -85,13 +85,13 @@
 | BENCH-04 | Phase 1 | Pending |
 | BENCH-05 | Phase 1 | Pending |
 | BENCH-06 | Phase 1 | Pending |
-| INDICF5-01 | Phase 2 | Pending |
-| INDICF5-02 | Phase 2 | Pending |
+| INDICF5-01 | Phase 2 | Complete |
+| INDICF5-02 | Phase 2 | Complete |
 | INDICF5-03 | Phase 2 | Pending |
 | INDICF5-04 | Phase 2 | Pending |
 | INDICF5-05 | Phase 2 | Pending |
 | INDICF5-06 | Phase 2 | Pending |
-| INDICF5-07 | Phase 2 | Pending |
+| INDICF5-07 | Phase 2 | Complete |
 | CLI-01 | Phase 3 | Pending |
 | CLI-02 | Phase 3 | Pending |
 | CLI-03 | Phase 3 | Pending |
