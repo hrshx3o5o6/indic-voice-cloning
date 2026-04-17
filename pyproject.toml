@@ -28,6 +28,8 @@ dependencies = [
     "pypinyin>=0.50.0",
     "jieba>=0.42.1",
     "cn2an>=0.5.22",
+    "transformers==4.49.0",
+    "torchaudio>=2.0.0",
 ]
 requires-python = ">=3.9,<3.13"
 
