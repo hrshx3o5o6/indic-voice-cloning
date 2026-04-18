@@ -1,13 +1,9 @@
-import os
-
 import typer
 from rich.console import Console
 
 from indic_voice.pipeline.asr import transcribe_audio
 from indic_voice.pipeline.translator import translate
 from indic_voice.pipeline.tts_indicf5 import generate_speech as indicf5_generate_speech
-from indic_voice.pipeline.tts_sarvam import generate_speech
-from indic_voice.models.tone_transfer import morph_tone
 
 app = typer.Typer(
     help="Zero-shot Indic Voice Cloning & S2ST Pipeline",
@@ -28,6 +24,12 @@ def clone(
     """
     console.print("[bold green]Running clone...[/bold green]")
     try:
+        # Auto-transcribe ref_voice if ref_text not provided (CLI-01)
+        if ref_text is None:
+            console.print("   [dim]Auto-transcribing reference audio...[/dim]")
+            ref_text = transcribe_audio(ref_voice)
+            console.print(f"   [dim]Ref transcript: '{ref_text}'[/dim]")
+
         console.print("1. Generating cloned speech via IndicF5...")
         indicf5_generate_speech(
             text=text,
@@ -48,10 +50,9 @@ def translate_audio(
     output: str = typer.Option("translated_clone.wav", "--output", "-o", help="Path to save the translated audio"),
 ) -> None:
     """
-    End-to-End Translate: Transcribe (EN) -> Translate -> Generate (Indic) -> Tone Morph.
+    End-to-End Translate: Transcribe (EN) -> Translate -> Generate (Indic) via IndicF5.
     """
     console.print("[bold blue]Running end-to-end Speech to Speech Translator...[/bold blue]")
-    tmp_tts = "tmp_sarvam_tts.wav"
     try:
         console.print("1. Transcribing source audio using Whisper...")
         en_text = transcribe_audio(audio)
@@ -61,18 +62,17 @@ def translate_audio(
         hi_text = translate(en_text, target_lang=target_lang)
         console.print(f"   [dim]Translation: '{hi_text}'[/dim]")
 
-        console.print("3. Generating native speech via Sarvam AI...")
-        generate_speech(hi_text, tmp_tts)
-
-        console.print("4. Imprinting original voice clone via OpenVoice...")
-        morph_tone(tmp_tts, audio, output)
+        console.print("3. Generating cloned speech via IndicF5...")
+        indicf5_generate_speech(
+            text=hi_text,
+            ref_audio_path=audio,  # Use source audio as reference
+            ref_text=en_text,  # Use Whisper transcript as ref_text (CLI-02)
+            output_path=output,
+        )
 
         console.print(f"[bold green]Success![/bold green] Saved translated clone to [cyan]{output}[/cyan]")
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
-    finally:
-        if os.path.exists(tmp_tts):
-            os.remove(tmp_tts)
 
 
 if __name__ == "__main__":
