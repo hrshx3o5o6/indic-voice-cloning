@@ -45,10 +45,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Device auto-selects CUDA over CPU; MPS is explicitly excluded (no vocos ISTFT crash on Apple M4)
   4. `uv run pytest tests/test_tts_indicf5.py` passes — happy path, missing ref_audio, empty ref_text, and output path creation are all covered
   5. `transformers==4.49.0`, `numpy<=1.26.4`, `torchaudio>=2.0.0`, and `accelerate>=0.33.0` are pinned in `pyproject.toml`
-**Plans**: 3 plans
+**Plans**: 3/3 complete ✅
 - [x] 02-01-PLAN.md — Dependency Pinning & Module Scaffold
 - [x] 02-02-PLAN.md — IndicF5 Core Implementation
-- [ ] 02-03-PLAN.md — Unit Test Suite
+- [x] 02-03-PLAN.md — Unit Test Suite
 
 ### Phase 3: CLI Integration
 **Goal**: Both `indic-voice clone` and `indic-voice translate` use IndicF5 end-to-end, with ref_text auto-filled and new UX guardrails in place — zero breaking changes
@@ -60,8 +60,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. All existing flags (`--text`, `--ref-voice`, `--audio`, `--target-lang`, `--output`) work identically to before — existing scripts are not broken
   4. Running either command with a reference audio shorter than 5s or longer than 12s prints a clear warning before proceeding
   5. Running on a machine without CUDA prints a CPU-speed warning; the first run shows a Rich progress bar during the 1.4 GB checkpoint download
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3/3 planned ✅
+- [x] 03-01-PLAN.md — Replace Sarvam+OpenVoice with IndicF5 in clone command
+- [x] 03-02-PLAN.md — Add ref_text auto-fill for clone and translate commands
+- [x] 03-03-PLAN.md — Add UX guardrails (audio validation, CPU warning, download message)
 
 ### Phase 4: Dependency Cleanup
 **Goal**: All Sarvam AI and OpenVoice code and packages are removed; `uv sync` resolves a clean, minimal dependency set
@@ -93,7 +95,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Benchmark Harness | 3/3 | ✅ COMPLETE | 2026-04-17 |
-| 2. IndicF5 Module | 0/3 | Not started | - |
-| 3. CLI Integration | 0/TBD | Not started | - |
+| 2. IndicF5 Module | 3/3 | ✅ COMPLETE | 2026-04-17 |
+| 3. CLI Integration | 3/3 | ✅ PLANNED | - |
 | 4. Dependency Cleanup | 0/TBD | Not started | - |
 | 5. Open-Source Polish | 0/TBD | Not started | - |
