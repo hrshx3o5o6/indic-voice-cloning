@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Benchmark Harness** - Build the evaluation harness that proves IndicF5 beats the current pipeline before any production code changes
 - [ ] **Phase 2: IndicF5 Module** - Build and test the IndicF5 TTS module in complete isolation — no CLI changes yet
-- [ ] **Phase 3: CLI Integration** - Wire IndicF5 into the `clone` and `translate` commands with ref_text auto-fill and new UX guardrails
+- [x] **Phase 3: CLI Integration** - Wire IndicF5 into the `clone` and `translate` commands with ref_text auto-fill and new UX guardrails (completed 2026-04-18)
 - [ ] **Phase 4: Dependency Cleanup** - Remove Sarvam, OpenVoice, and the 10 packages that supported them
 - [ ] **Phase 5: Open-Source Polish** - README, error messages, temp-file hygiene — everything a new contributor needs
 
@@ -96,6 +96,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Benchmark Harness | 3/3 | ✅ COMPLETE | 2026-04-17 |
 | 2. IndicF5 Module | 3/3 | ✅ COMPLETE | 2026-04-17 |
-| 3. CLI Integration | 3/3 | ✅ PLANNED | - |
+| 3. CLI Integration | 3/3 | Complete   | 2026-04-18 |
 | 4. Dependency Cleanup | 0/TBD | Not started | - |
 | 5. Open-Source Polish | 0/TBD | Not started | - |
