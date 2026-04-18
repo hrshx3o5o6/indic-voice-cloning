@@ -5,6 +5,7 @@ from rich.console import Console
 
 from indic_voice.pipeline.asr import transcribe_audio
 from indic_voice.pipeline.translator import translate
+from indic_voice.pipeline.tts_indicf5 import generate_speech as indicf5_generate_speech
 from indic_voice.pipeline.tts_sarvam import generate_speech
 from indic_voice.models.tone_transfer import morph_tone
 
@@ -19,26 +20,25 @@ console = Console()
 def clone(
     text: str = typer.Option(..., "--text", "-t", help="The Hindi text to generate"),
     ref_voice: str = typer.Option(..., "--ref-voice", "-v", help="Path to your 3-second reference voice (.wav)"),
+    ref_text: str = typer.Option(None, "--ref-text", help="Transcript of the reference audio (auto-generated if not provided)"),
     output: str = typer.Option("clone_output.wav", "--output", "-o", help="Path to save the cloned audio"),
 ) -> None:
     """
     Generate native Hindi speech cloned to your exact voice tone.
     """
     console.print("[bold green]Running clone...[/bold green]")
-    tmp_tts = "tmp_sarvam_tts.wav"
     try:
-        console.print("1. Generating base Hindi speech via Sarvam AI...")
-        generate_speech(text, tmp_tts)
-
-        console.print("2. Imprinting your voice clone via OpenVoice...")
-        morph_tone(tmp_tts, ref_voice, output)
+        console.print("1. Generating cloned speech via IndicF5...")
+        indicf5_generate_speech(
+            text=text,
+            ref_audio_path=ref_voice,
+            ref_text=ref_text,
+            output_path=output,
+        )
 
         console.print(f"[bold green]Success![/bold green] Saved cloned audio to [cyan]{output}[/cyan]")
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
-    finally:
-        if os.path.exists(tmp_tts):
-            os.remove(tmp_tts)
 
 
 @app.command(name="translate")
