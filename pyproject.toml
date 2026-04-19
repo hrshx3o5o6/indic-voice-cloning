@@ -32,6 +32,7 @@ dependencies = [
     "torchaudio>=2.0.0",
     "accelerate>=0.33.0",
     "torchcodec>=0.9.1",
+    "f5-tts>=1.1.7",
 ]
 requires-python = ">=3.9,<3.13"
 

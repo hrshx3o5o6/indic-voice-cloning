@@ -9,7 +9,20 @@ import torch
 import torchaudio
 import numpy as np
 import soundfile as sf
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from dotenv import load_dotenv
+from transformers import AutoModel, AutoTokenizer, AutoConfig
+
+# Load environment variables from .env file
+load_dotenv()
+
+
+def _get_hf_token() -> str | None:
+    """Get HuggingFace token from environment.
+
+    Returns:
+        The HF_TOKEN if set, None otherwise.
+    """
+    return os.getenv("HF_TOKEN")
 
 
 def _select_device() -> torch.device:
@@ -62,38 +75,40 @@ def generate_speech(
     # Task 1: Device selection and model loading
     device = _select_device()
 
+    # Get HuggingFace token if available
+    hf_token = _get_hf_token()
+    load_kwargs = {
+        "trust_remote_code": True,
+    }
+    if hf_token:
+        load_kwargs["token"] = hf_token
+
     try:
-        model = AutoModelForCausalLM.from_pretrained(
+        # Load IndicF5 model using AutoModel (not AutoModelForCausalLM)
+        model = AutoModel.from_pretrained(
             "ai4bharat/IndicF5",
-            trust_remote_code=True,
-            device_map="auto"
+            device_map="auto",
+            **load_kwargs
         )
         tokenizer = AutoTokenizer.from_pretrained(
             "ai4bharat/IndicF5",
-            trust_remote_code=True
+            **load_kwargs
         )
     except Exception as e:
         raise RuntimeError(f"Failed to load IndicF5 model from HuggingFace: {e}")
 
     # Task 3: Model inference and audio normalization
-    # Tokenize input text
-    input_ids = tokenizer(text, return_tensors="pt").input_ids.to(device)
-
-    # Generate speech conditioned on reference audio and transcript
+    # IndicF5 takes text, ref_audio_path, and ref_text directly
     try:
         with torch.no_grad():
-            output = model.generate(
-                input_ids,
-                max_length=1024,
-                do_sample=True,
-                top_p=0.95,
-                temperature=0.7,
+            audio_data = model(
+                text,
+                ref_audio_path=ref_audio_path,
+                ref_text=ref_text,
             )
-        # Output is typically a waveform tensor; convert to numpy
-        if isinstance(output, torch.Tensor):
-            audio_data = output.cpu().numpy()
-        else:
-            audio_data = output
+        # Output is typically a numpy array; convert to numpy if tensor
+        if isinstance(audio_data, torch.Tensor):
+            audio_data = audio_data.cpu().numpy()
     except Exception as e:
         raise RuntimeError(f"IndicF5 inference failed: {e}")
 
@@ -111,7 +126,7 @@ def generate_speech(
             os.makedirs(output_dir, exist_ok=True)
 
         # Determine sample rate (use model's native rate or ref_audio rate)
-        output_sample_rate = 16000  # Default; check IndicF5 docs for actual rate
+        output_sample_rate = 24000  # IndicF5 native sample rate
         sf.write(output_path, audio_data, output_sample_rate)
     except Exception as e:
         raise RuntimeError(f"Failed to write output audio: {e}")
