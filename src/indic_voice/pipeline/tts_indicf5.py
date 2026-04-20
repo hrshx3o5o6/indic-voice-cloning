@@ -5,15 +5,28 @@ reference audio, and reference transcript.
 """
 
 import os
+import sys
 import torch
 import torchaudio
 import numpy as np
 import soundfile as sf
+import io
 from dotenv import load_dotenv
-from transformers import AutoModel, AutoTokenizer, AutoConfig
+from pydub import AudioSegment, silence
+from huggingface_hub import hf_hub_download
+from safetensors.torch import load_file
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Import f5_tts modules (installed via pip)
+from f5_tts.infer.utils_infer import (
+    infer_process,
+    load_model,
+    load_vocoder,
+    preprocess_ref_audio_text,
+)
+from f5_tts.model import DiT
 
 
 def _get_hf_token() -> str | None:
@@ -59,84 +72,105 @@ def generate_speech(
         ValueError: If ref_text is empty or None.
         RuntimeError: If model loading or inference fails.
     """
-    # Task 2: Validate inputs and load reference audio
+    # Validate inputs and load reference audio
     if not os.path.exists(ref_audio_path):
         raise FileNotFoundError(f"Reference audio file not found: {ref_audio_path}")
 
     if not ref_text or (isinstance(ref_text, str) and ref_text.strip() == ""):
         raise ValueError("Reference text (ref_text) cannot be empty or None")
 
-    # Load reference audio for voice cloning context
-    try:
-        ref_waveform, ref_sample_rate = torchaudio.load(ref_audio_path)
-    except Exception as e:
-        raise RuntimeError(f"Failed to load reference audio: {e}")
-
-    # Task 1: Device selection and model loading
+    # Device selection
     device = _select_device()
-
-    # Get HuggingFace token if available
-    hf_token = _get_hf_token()
-    load_kwargs = {
-        "trust_remote_code": True,
-    }
-    if hf_token:
-        load_kwargs["token"] = hf_token
+    repo_id = "ai4bharat/IndicF5"
 
     try:
-        # Load config first to get model configuration
-        config = AutoConfig.from_pretrained(
-            "ai4bharat/IndicF5",
-            **load_kwargs
+        # Download model checkpoint from HuggingFace
+        ckpt_path = hf_hub_download(
+            repo_id=repo_id,
+            filename="model.safetensors",
+            token=_get_hf_token()
         )
 
-        # Load IndicF5 model on CPU first (avoids meta tensor issues with device_map)
-        model = AutoModel.from_pretrained(
-            "ai4bharat/IndicF5",
-            config=config,
-            **load_kwargs
+        # Download vocab file
+        vocab_path = hf_hub_download(
+            repo_id=repo_id,
+            filename="checkpoints/vocab.txt",
+            token=_get_hf_token()
         )
 
-        # Move model to selected device
-        model = model.to(device)
-        model.eval()
+        # Load vocoder
+        vocoder = load_vocoder(vocoder_name="vocos", is_local=False, device=device)
 
-        tokenizer = AutoTokenizer.from_pretrained(
-            "ai4bharat/IndicF5",
-            **load_kwargs
+        # Load model with checkpoint path
+        # Note: IndicF5 uses DiT architecture with specific config
+        ema_model = load_model(
+            model_cls=DiT,
+            model_cfg=dict(dim=1024, depth=22, heads=16, ff_mult=2, text_dim=512, conv_layers=4),
+            ckpt_path=ckpt_path,
+            mel_spec_type="vocos",
+            vocab_file=vocab_path,
+            device=device
         )
+
     except Exception as e:
         raise RuntimeError(f"Failed to load IndicF5 model from HuggingFace: {e}")
 
-    # Task 3: Model inference and audio normalization
-    # IndicF5 takes text, ref_audio_path, and ref_text directly
+    # Model inference
     try:
-        with torch.no_grad():
-            audio_data = model(
-                text,
-                ref_audio_path=ref_audio_path,
-                ref_text=ref_text,
-            )
-        # Output is typically a numpy array; convert to numpy if tensor
-        if isinstance(audio_data, torch.Tensor):
-            audio_data = audio_data.cpu().numpy()
+        # Preprocess reference audio and text
+        ref_audio, ref_text = preprocess_ref_audio_text(ref_audio_path, ref_text)
+
+        # Perform inference
+        audio, final_sample_rate, _ = infer_process(
+            ref_audio,
+            ref_text,
+            text,
+            ema_model,
+            vocoder,
+            mel_spec_type="vocos",
+            speed=1.0,
+            device=device,
+        )
+
+        # Convert to pydub format and remove silence
+        buffer = io.BytesIO()
+        sf.write(buffer, audio, samplerate=24000, format="WAV")
+        buffer.seek(0)
+        audio_segment = AudioSegment.from_file(buffer, format="wav")
+
+        # Remove silence
+        non_silent_segs = silence.split_on_silence(
+            audio_segment,
+            min_silence_len=1000,
+            silence_thresh=-50,
+            keep_silence=500,
+            seek_step=10,
+        )
+        if non_silent_segs:
+            non_silent_wave = sum(non_silent_segs, AudioSegment.silent(duration=0))
+            audio_segment = non_silent_wave
+
+        # Normalize loudness
+        target_dBFS = -20.0
+        change_in_dBFS = target_dBFS - audio_segment.dBFS
+        audio_segment = audio_segment.apply_gain(change_in_dBFS)
+
+        # Convert to numpy array
+        audio_data = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
+
     except Exception as e:
         raise RuntimeError(f"IndicF5 inference failed: {e}")
 
-    # Normalize audio: int16 → float32 (per INDICF5-07)
+    # Normalize audio: int16 → float32
     if audio_data.dtype == np.int16:
         audio_data = audio_data.astype(np.float32) / 32768.0
-    elif audio_data.dtype != np.float32:
-        audio_data = audio_data.astype(np.float32)
 
     # Write output WAV file
     try:
-        # Create output directory if it doesn't exist
         output_dir = os.path.dirname(output_path)
         if output_dir and not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
-        # Determine sample rate (use model's native rate or ref_audio rate)
         output_sample_rate = 24000  # IndicF5 native sample rate
         sf.write(output_path, audio_data, output_sample_rate)
     except Exception as e:
