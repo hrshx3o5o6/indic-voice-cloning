@@ -139,6 +139,7 @@ refactor(cli): extract temp file cleanup into context manager
 - Always confirm with the user before committing or pushing any major change.
 - `main` is the stable baseline — never push broken code there.
 - Never use `--no-verify` to skip hooks.
+- **Bug fixes:** When a bug is reported and fixed, commit the fix immediately with a descriptive message (e.g., `fix(tts): resolve meta tensor error in IndicF5 model loading`).
 
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
