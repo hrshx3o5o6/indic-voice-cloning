@@ -7,7 +7,6 @@ reference audio, and reference transcript.
 import os
 import sys
 import torch
-import torchaudio
 import numpy as np
 import soundfile as sf
 import io
@@ -38,16 +37,16 @@ def _get_hf_token() -> str | None:
     return os.getenv("HF_TOKEN")
 
 
-def _select_device() -> torch.device:
+def _select_device() -> str:
     """Select computation device: CUDA > CPU (MPS explicitly excluded).
 
     Returns:
-        torch.device: Selected device for model inference.
+        str: Selected device string ("cuda" or "cpu") for f5_tts compatibility.
     """
     if torch.cuda.is_available():
-        return torch.device('cuda')
+        return "cuda"
     else:
-        return torch.device('cpu')
+        return "cpu"
 
 
 def generate_speech(
