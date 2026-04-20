@@ -84,12 +84,23 @@ def generate_speech(
         load_kwargs["token"] = hf_token
 
     try:
-        # Load IndicF5 model using AutoModel (not AutoModelForCausalLM)
-        model = AutoModel.from_pretrained(
+        # Load config first to get model configuration
+        config = AutoConfig.from_pretrained(
             "ai4bharat/IndicF5",
-            device_map="auto",
             **load_kwargs
         )
+
+        # Load IndicF5 model on CPU first (avoids meta tensor issues with device_map)
+        model = AutoModel.from_pretrained(
+            "ai4bharat/IndicF5",
+            config=config,
+            **load_kwargs
+        )
+
+        # Move model to selected device
+        model = model.to(device)
+        model.eval()
+
         tokenizer = AutoTokenizer.from_pretrained(
             "ai4bharat/IndicF5",
             **load_kwargs
