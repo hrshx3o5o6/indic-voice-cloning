@@ -100,16 +100,43 @@ def generate_speech(
         # Load vocoder
         vocoder = load_vocoder(vocoder_name="vocos", is_local=False, device=device)
 
-        # Load model with checkpoint path
+        # Load checkpoint and fix key prefixes for torch.compile compatibility
+        # IndicF5 checkpoint has "ema_model._orig_mod." prefix that needs stripping
+        checkpoint = load_file(ckpt_path, device=device)
+        fixed_checkpoint = {}
+        for key, value in checkpoint.items():
+            # Strip "ema_model._orig_mod." -> ""
+            # Also handle "_orig_mod." if present without ema_model
+            if key.startswith("ema_model._orig_mod."):
+                new_key = key.replace("ema_model._orig_mod.", "")
+            elif key.startswith("_orig_mod."):
+                new_key = key.replace("_orig_mod.", "")
+            elif key.startswith("ema_model."):
+                new_key = key.replace("ema_model.", "")
+            else:
+                new_key = key
+            fixed_checkpoint[new_key] = value
+
+        # Save fixed checkpoint to temp file
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".safetensors", delete=False) as tmp:
+            from safetensors.torch import save_file
+            save_file(fixed_checkpoint, tmp.name)
+            fixed_ckpt_path = tmp.name
+
+        # Load model with fixed checkpoint path
         # Note: IndicF5 uses DiT architecture with specific config
         ema_model = load_model(
             model_cls=DiT,
             model_cfg=dict(dim=1024, depth=22, heads=16, ff_mult=2, text_dim=512, conv_layers=4),
-            ckpt_path=ckpt_path,
+            ckpt_path=fixed_ckpt_path,
             mel_spec_type="vocos",
             vocab_file=vocab_path,
             device=device
         )
+
+        # Clean up temp file
+        os.unlink(fixed_ckpt_path)
 
     except Exception as e:
         raise RuntimeError(f"Failed to load IndicF5 model from HuggingFace: {e}")
