@@ -100,13 +100,14 @@ def generate_speech(
         # Load vocoder
         vocoder = load_vocoder(vocoder_name="vocos", is_local=False, device=device)
 
-        # Load checkpoint and fix key prefixes for torch.compile compatibility
-        # IndicF5 checkpoint has "ema_model._orig_mod." prefix that needs stripping
+        # Fix checkpoint: strip ema_model._orig_mod. prefix from transformer keys
+        # Drop vocoder keys — they are loaded separately by load_vocoder()
         checkpoint = load_file(ckpt_path, device=device)
         fixed_checkpoint = {}
         for key, value in checkpoint.items():
-            # Strip "ema_model._orig_mod." -> ""
-            # Also handle "_orig_mod." if present without ema_model
+            if key.startswith("vocoder"):
+                continue  # Drop vocoder keys — loaded separately
+            # Strip ema_model._orig_mod. -> "", ema_model. -> "", _orig_mod. -> ""
             if key.startswith("ema_model._orig_mod."):
                 new_key = key.replace("ema_model._orig_mod.", "")
             elif key.startswith("_orig_mod."):
