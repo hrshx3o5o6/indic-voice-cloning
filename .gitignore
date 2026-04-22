@@ -37,3 +37,7 @@ processed/
 
 # uv
 uv.lock
+
+#audio output
+clone_output.wav
+translated_cloned.wav

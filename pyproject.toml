@@ -1,11 +1,11 @@
 [project]
 name = "indic-voice"
 version = "0.1.0"
-description = "Zero-shot Indic voice cloning and S2ST pipeline using Sarvam, OpenVoice, and Whisper"
-authors = [{name = "Harsha"}]
+description = "Zero-shot Indic voice cloning and S2ST pipeline using IndicF5, Whisper, and Google Translate"
+authors = [{name = "Harsha", email = "harsha@example.com"}]
 license = {text = "MIT"}
 readme = "README.md"
-keywords = ["voice-cloning", "tts", "asr", "indic", "hindi", "openvoice"]
+keywords = ["voice-cloning", "tts", "asr", "indic", "hindi", "tamil", "telugu", "f5-tts", "indicf5"]
 dependencies = [
     "typer>=0.12.3",
     "rich>=13.7.1",
