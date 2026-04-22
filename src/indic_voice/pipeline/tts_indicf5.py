@@ -11,7 +11,6 @@ import numpy as np
 import soundfile as sf
 import io
 from dotenv import load_dotenv
-from pydub import AudioSegment, silence
 from huggingface_hub import hf_hub_download
 from safetensors.torch import load_file
 
@@ -158,39 +157,8 @@ def generate_speech(
             speed=1.0,
             device=device,
         )
-
-        # Convert to pydub format and remove silence
-        buffer = io.BytesIO()
-        sf.write(buffer, audio, samplerate=24000, format="WAV")
-        buffer.seek(0)
-        audio_segment = AudioSegment.from_file(buffer, format="wav")
-
-        # Remove silence
-        non_silent_segs = silence.split_on_silence(
-            audio_segment,
-            min_silence_len=1000,
-            silence_thresh=-50,
-            keep_silence=500,
-            seek_step=10,
-        )
-        if non_silent_segs:
-            non_silent_wave = sum(non_silent_segs, AudioSegment.silent(duration=0))
-            audio_segment = non_silent_wave
-
-        # Normalize loudness
-        target_dBFS = -20.0
-        change_in_dBFS = target_dBFS - audio_segment.dBFS
-        audio_segment = audio_segment.apply_gain(change_in_dBFS)
-
-        # Convert to numpy array
-        audio_data = np.array(audio_segment.get_array_of_samples(), dtype=np.float32)
-
     except Exception as e:
         raise RuntimeError(f"IndicF5 inference failed: {e}")
-
-    # Normalize audio: int16 → float32
-    if audio_data.dtype == np.int16:
-        audio_data = audio_data.astype(np.float32) / 32768.0
 
     # Write output WAV file
     try:
@@ -199,7 +167,8 @@ def generate_speech(
             os.makedirs(output_dir, exist_ok=True)
 
         output_sample_rate = 24000  # IndicF5 native sample rate
-        sf.write(output_path, audio_data, output_sample_rate)
+        # Write as float32 WAV — soundfile stores [-1, 1] floats correctly with subtype "FLOAT"
+        sf.write(output_path, audio.astype(np.float32), output_sample_rate, subtype="FLOAT")
     except Exception as e:
         raise RuntimeError(f"Failed to write output audio: {e}")
 
