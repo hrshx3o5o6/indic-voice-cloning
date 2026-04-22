@@ -1,6 +1,8 @@
 import wave
 import struct
 import pytest
+import numpy as np
+import torch
 
 
 @pytest.fixture
@@ -35,3 +37,15 @@ def mock_sarvam_response():
         wf.writeframes(struct.pack("<" + "h" * n_frames, *([0] * n_frames)))
 
     return buf.getvalue()
+
+
+@pytest.fixture
+def mock_indicf5_audio_output():
+    """Synthetic audio output from IndicF5 model (int16 numpy array, 1 second at 16kHz)."""
+    return np.array([0, 100, 200, 300, -100, -200] * 2667, dtype=np.int16)[:16000]
+
+
+@pytest.fixture
+def mock_indicf5_ref_audio():
+    """Synthetic reference audio for IndicF5 input (float32 tensor, 16kHz, 1 second)."""
+    return torch.randn(1, 16000).float()  # [channels=1, samples=16000]

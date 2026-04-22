@@ -22,7 +22,7 @@ def generate_speech(
     text: str,
     output_path: str,
     lang_code: str = "hi-IN",
-    speaker: str = "aditya",
+    speaker: str = "ritu",
 ) -> str:
     """Generate Indic speech using Sarvam AI Bulbul TTS.
 
