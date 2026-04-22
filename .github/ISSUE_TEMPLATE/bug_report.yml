@@ -1,0 +1,40 @@
+name: Bug Report
+description: Report a bug in indic-voice
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Description
+        Describe the bug clearly. Include the exact command you ran and the full error output.
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      description: Exact steps to reproduce the bug
+      placeholder: |
+        1. Run `indic-voice clone --text "..." --ref-voice ...`
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, GPU/CPU, relevant package versions
+      placeholder: |
+        - macOS 14.4 / Linux (Ubuntu 22.04)
+        - Python 3.11
+        - GPU: NVIDIA RTX 3090 / Apple M3 / CPU only
+        - `uv run indic-voice --version`
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Paste the full error traceback or CLI output here
+      render: shell
