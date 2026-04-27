@@ -99,47 +99,54 @@ def generate_speech(
         # Load vocoder
         vocoder = load_vocoder(vocoder_name="vocos", is_local=False, device=device)
 
-        # Fix checkpoint: strip ema_model._orig_mod. prefix from transformer keys
-        # Drop vocoder keys — they are loaded separately by load_vocoder()
+        # Initialize model architecture
+        model_cfg = dict(dim=1024, depth=22, heads=16, ff_mult=2, text_dim=512, conv_layers=4)
+        
+        # We need the vocab size to initialize the model
+        from f5_tts.infer.utils_infer import get_tokenizer
+        vocab_char_map, vocab_size = get_tokenizer(vocab_path, "custom")
+        
+        from f5_tts.model.cfm import CFM
+        ema_model = CFM(
+            transformer=DiT(**model_cfg, text_num_embeds=vocab_size, mel_dim=100),
+            mel_spec_kwargs=dict(
+                n_fft=1024,
+                hop_length=256,
+                win_length=1024,
+                n_mel_channels=100,
+                target_sample_rate=24000,
+                mel_spec_type="vocos",
+            ),
+            odeint_kwargs=dict(method="euler"),
+            vocab_char_map=vocab_char_map,
+        ).to(device)
+
+        # Load and fix checkpoint keys
         checkpoint = load_file(ckpt_path, device=device)
-        fixed_checkpoint = {}
+        
+        # The goal is to map checkpoint keys (ema_model._orig_mod.transformer.xxx) 
+        # to our model keys (transformer.xxx)
+        state_dict = {}
         for key, value in checkpoint.items():
             if key.startswith("vocoder"):
-                continue  # Drop vocoder keys — loaded separately
-            # Strip ema_model._orig_mod. -> "", ema_model. -> "", _orig_mod. -> ""
-            if key.startswith("ema_model._orig_mod."):
-                new_key = key.replace("ema_model._orig_mod.", "")
-            elif key.startswith("_orig_mod."):
-                new_key = key.replace("_orig_mod.", "")
-            elif key.startswith("ema_model."):
-                new_key = key.replace("ema_model.", "")
-            else:
-                new_key = key
-            fixed_checkpoint[new_key] = value
+                continue
+            
+            # Strip all common prefixes to get to the core layer names
+            new_key = key
+            for prefix in ["ema_model._orig_mod.", "ema_model.", "_orig_mod."]:
+                if new_key.startswith(prefix):
+                    new_key = new_key[len(prefix):]
+                    break
+            
+            state_dict[new_key] = value
 
-        # Save fixed checkpoint to temp file
-        import tempfile
-        with tempfile.NamedTemporaryFile(suffix=".safetensors", delete=False) as tmp:
-            from safetensors.torch import save_file
-            save_file(fixed_checkpoint, tmp.name)
-            fixed_ckpt_path = tmp.name
-
-        # Load model with fixed checkpoint path
-        # Note: IndicF5 uses DiT architecture with specific config
-        ema_model = load_model(
-            model_cls=DiT,
-            model_cfg=dict(dim=1024, depth=22, heads=16, ff_mult=2, text_dim=512, conv_layers=4),
-            ckpt_path=fixed_ckpt_path,
-            mel_spec_type="vocos",
-            vocab_file=vocab_path,
-            device=device
-        )
-
-        # Clean up temp file
-        os.unlink(fixed_ckpt_path)
+        # Load state dict into the CFM model
+        # CFM has a 'transformer' attribute, so keys starting with 'transformer.' will match
+        ema_model.load_state_dict(state_dict, strict=True)
+        ema_model.eval()
 
     except Exception as e:
-        raise RuntimeError(f"Failed to load IndicF5 model from HuggingFace: {e}")
+        raise RuntimeError(f"Failed to load IndicF5 model: {e}")
 
     # Model inference
     try:
@@ -147,6 +154,7 @@ def generate_speech(
         ref_audio, ref_text = preprocess_ref_audio_text(ref_audio_path, ref_text)
 
         # Perform inference
+        # Use a slightly higher cfg_strength for better articulation if it was sounding like gibberish
         audio, final_sample_rate, _ = infer_process(
             ref_audio,
             ref_text,
@@ -155,6 +163,7 @@ def generate_speech(
             vocoder,
             mel_spec_type="vocos",
             speed=1.0,
+            cfg_strength=2.0,
             device=device,
         )
     except Exception as e:
@@ -166,9 +175,16 @@ def generate_speech(
         if output_dir and not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
+        # Normalization to prevent clipping and resolve "garbage" sound if it was related to range
+        if audio.dtype == np.int16:
+            audio = audio.astype(np.float32) / 32768.0
+        
+        max_val = np.abs(audio).max()
+        if max_val > 0:
+            audio = audio / max_val * 0.95  # Normalize to -0.95 to 0.95
+
         output_sample_rate = 24000  # IndicF5 native sample rate
-        # Write as float32 WAV — soundfile stores [-1, 1] floats correctly with subtype "FLOAT"
-        sf.write(output_path, audio.astype(np.float32), output_sample_rate, subtype="FLOAT")
+        sf.write(output_path, audio.astype(np.float32), output_sample_rate)
     except Exception as e:
         raise RuntimeError(f"Failed to write output audio: {e}")
 
