@@ -1,0 +1,13 @@
+---
+project: indic-voice-cloning-s2st
+goal: Zero-shot voice cloning from English to Hindi/Tamil preserving exact tonality and intent.
+status: bootstrap
+current_phase: literature_survey
+hypotheses: []
+metrics:
+  primary: Speaker Similarity (SEC), Prosody Transfer Score
+  secondary: Word Error Rate (WER), MOS
+next_steps:
+  - Search literature for cross-lingual voice cloning and prosody transfer.
+  - Define baseline architecture.
+---
